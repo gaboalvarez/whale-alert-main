@@ -1,0 +1,7 @@
+.git
+airflow_settings.yaml
+astro
+__pycache__/
+.venv
+.vscode
+.env
