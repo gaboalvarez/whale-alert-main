@@ -1,0 +1,62 @@
+version: '3.8'
+
+networks:
+  data-network:
+    name: data-network
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:16
+    networks:
+      - data-network
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  redis:
+    image: redis:7.2-bookworm
+    networks:
+      - data-network
+    expose:
+      - 6379
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 30s
+    restart: always
+
+  minio:
+    image: minio/minio
+    container_name: data-lake
+    networks:
+      - data-network
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=minio123
+    restart: always
+
+volumes:
+  postgres-db-volume:
+  minio_data:
